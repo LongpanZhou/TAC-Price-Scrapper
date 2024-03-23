@@ -1,12 +1,16 @@
 import sys
+from flask_cors import CORS
+from flask_socketio import SocketIO, emit
 from flask import Flask, jsonify, request
 from io import StringIO
 import pandas as pd
+import numpy as np
 import requests
 
 
 app = Flask(__name__)
-
+socketio = SocketIO(app, cors_allowed_origins="*")
+cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 def exit_program():
     print("Exiting the program...")
@@ -24,10 +28,11 @@ def download_csv():
 # DF = download_csv()
 DF = pd.read_csv("tacdb.csv", skiprows=1)
 
+
 def query(param):
-    param = param.strip("\"")
+    param = param[:].replace("\"", "")     #param = param.strip("\"") security issue
     if (len(param) == 8 or len(param) == 15 or len(param) == 16) and all([_.isdigit() for _ in param]):
-        return DF[DF['tac'] == int(param[:8])].to_dict(orient="records")
+        return DF[DF['tac'] == int(param[:8])].replace({np.nan: None}).to_dict(orient="records")
     else:
         print("Error: Wrong query TAC/IMEI Parameter")
         return None
@@ -39,7 +44,9 @@ def hello_world():
 
 @app.route("/get")
 def get():
-    return jsonify(query(request.args.get("param")))
+    res = query(request.args.get("param"))
+    socketio.emit('announcement', res)
+    return jsonify(res)
 
 if __name__ == "__main__":
     app.run(debug=True)
