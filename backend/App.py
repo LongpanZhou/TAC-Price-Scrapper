@@ -30,7 +30,7 @@ DF = pd.read_csv("tacdb.csv", skiprows=1)
 
 
 def query(param):
-    param = param[:].replace("\"", "")     #param = param.strip("\"") security issue
+    param = param[:].replace("\"", "")
     if (len(param) == 8 or len(param) == 15 or len(param) == 16) and all([_.isdigit() for _ in param]):
         return DF[DF['tac'] == int(param[:8])].replace({np.nan: None}).to_dict(orient="records")
     else:
@@ -42,11 +42,14 @@ def query(param):
 def hello_world():
     return "Hello, World!"
 
+
 @app.route("/get")
 def get():
     res = query(request.args.get("param"))
-    socketio.emit('announcement', res)
+    if res:
+        socketio.emit('announcement', res)
     return jsonify(res)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
