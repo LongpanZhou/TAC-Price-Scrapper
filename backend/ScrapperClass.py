@@ -25,11 +25,11 @@ class ScrapperClass(ABC):
         name = name.lower().split(' ')
         i, j = 0, 0
         while i < len(title):
-            while j < len(name) and title[i] == name[j]:
+            while j < len(name) and i < len(title) and title[i] == name[j]:
                 i += 1
                 j += 1
 
-            if title[i] in self.restricted:
+            if i < len(title) and title[i] in self.restricted:
                 return False
             i += 1
 
