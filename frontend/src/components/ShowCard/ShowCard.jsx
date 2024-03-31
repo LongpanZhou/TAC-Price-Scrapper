@@ -1,33 +1,43 @@
-import React, { useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
+import { API_URL } from "../../config.js";
 
 function ShowCard(info) {
-  info = info['data'][0]
-  const [data, setData] = useState([
-    { id: 1, title: "Product 1", price: "$10", source: "Shop A", link: "http://example.com/product1" },
-    { id: 2, title: "Product 2", price: "$20", source: "Shop B", link: "http://example.com/product2" },
-    { id: 3, title: "Product 3", price: "$15", source: "Shop C", link: "http://example.com/product3" },
-    { id: 4, title: "Product 4", price: "$25", source: "Shop D", link: "http://example.com/product4" },
-    { id: 5, title: "Product 5", price: "$30", source: "Shop E", link: "http://example.com/product5" },
-    { id: 6, title: "Product 1", price: "$10", source: "Shop A", link: "http://example.com/product1" },
-    { id: 7, title: "Product 2", price: "$20", source: "Shop B", link: "http://example.com/product2" },
-    { id: 8, title: "Product 3", price: "$15", source: "Shop C", link: "http://example.com/product3" },
-    { id: 9, title: "Product 4", price: "$25", source: "Shop D", link: "http://example.com/product4" },
-    { id: 10, title: "Product 5", price: "$30", source: "Shop E", link: "http://example.com/product5" },
-    { id: 11, title: "Product 1", price: "$10", source: "Shop A", link: "http://example.com/product1" },
-    { id: 12, title: "Product 2", price: "$20", source: "Shop B", link: "http://example.com/product2" },
-    { id: 13, title: "Product 3", price: "$15", source: "Shop C", link: "http://example.com/product3" },
-    { id: 14, title: "Product 4", price: "$25", source: "Shop D", link: "http://example.com/product4" },
-    { id: 15, title: "Product 5", price: "$30", source: "Shop E", link: "http://example.com/product5" },
-    ]);
-  
-  {/* Variables & Sorting */}
-  const sortable = {cursor: 'pointer'}
+  info = info['data'][0];
+  const [data, setData] = useState([]);
+
+  {/* Fetch Data From Scrapper*/}
+  useEffect(() => {
+    const Fetch = async () => {
+      const url = `${API_URL}/fetch?param=${info['name.1']}`;
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {throw new Error('Network response was not ok');}
+
+        const rawData = await response.json();
+        const parsedData = rawData.map(item => ({
+          id: item.id,
+          link: item.link,
+          price: parseFloat(item.price),
+          source: item.source,
+          title: item.title
+        }));
+        setData(parsedData);
+
+      } catch (error) {
+        console.error('There was a problem fetching the data:', error);
+      }
+    };
+
+    Fetch();
+  }, []);
+
+  {/* Sorting Functions */}
   const [priceArray, setPriceArray] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
-
+  
   useEffect(() => {
     if (data.length > 0) {
-      const sortedPrices = data.map(item => parseFloat(item.price.slice(1))).sort((a, b) => a - b);
+      const sortedPrices = data.map(item => parseFloat(item.price)).sort((a, b) => a - b);
       setPriceArray(sortedPrices);
     }
   }, [data]);
@@ -36,6 +46,7 @@ function ShowCard(info) {
   const medianPrice = priceArray.length > 0 ? priceArray[Math.floor(priceArray.length / 2)] : null;
   const maxPrice = priceArray.length > 0 ? priceArray[priceArray.length - 1] : null;
 
+  
   const handleSort = (key) => {
     let direction = 'ascending';
     if (sortConfig.key === key && sortConfig.direction === 'ascending') {
@@ -48,15 +59,19 @@ function ShowCard(info) {
     }));
     setSortConfig({ key, direction });
   };
-
+  
   const getArrow = (key) => {
     if (sortConfig.key === key) {return sortConfig.direction === 'ascending' ? '▲' : '▼';}
     return '';
   };
 
   const handleDelete = (id) => {
-    setData(data.filter(item => item.id !== id));
-    setPriceArray(priceArray.filter(price => price !== parseFloat(data.find(item => item.id === id).price.slice(1))));
+    setData(prevData => {
+      const updatedData = prevData.filter(item => item.id !== id);
+      const updatedPrices = updatedData.map(item => parseFloat(item.price));
+      setPriceArray(updatedPrices);
+      return updatedData;
+    });
   };
 
   return (
@@ -91,13 +106,13 @@ function ShowCard(info) {
       <table className="table table-striped table-hover container">
         <thead>
           <tr>
-            <th scope="col" style={sortable} onClick={() => handleSort('title')}>
+            <th scope="col" style={{ cursor: 'pointer' }} onClick={() => handleSort('title')}>
               Title {getArrow('title')}
             </th>
-            <th scope="col" style={sortable} onClick={() => handleSort('price')}>
+            <th scope="col" style={{ cursor: 'pointer' }} onClick={() => handleSort('price')}>
               Price {getArrow('price')}
             </th>
-            <th scope="col" style={sortable} onClick={() => handleSort('source')}>
+            <th scope="col" style={{ cursor: 'pointer' }} onClick={() => handleSort('source')}>
               Source {getArrow('source')}
             </th>
             <th scope="col">
@@ -109,10 +124,10 @@ function ShowCard(info) {
           {data.map(item => (
             <tr key={item.id}>
               <td>{item.title}</td>
-              <td>{item.price}</td>
+              <td>{item.price.toFixed(2)}</td>
               <td>{item.source}</td>
               <td>
-                <a href={item.link} target="_blank" rel="noopener noreferrer">{item.link}</a>
+                <a href={item.link} target="_blank" rel="noopener noreferrer">Here</a>
               </td>
               <td className='d-flex justify-content-end'>
                 <button onClick={() => handleDelete(item.id)}>Delete</button>
@@ -125,4 +140,4 @@ function ShowCard(info) {
   )
 }
 
-export default ShowCard
+export default ShowCard;

@@ -1,4 +1,5 @@
 import sys
+from Scrapper import Scrapper
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 from flask import Flask, jsonify, request
@@ -6,11 +7,12 @@ from io import StringIO
 import pandas as pd
 import numpy as np
 import requests
-
+import json
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
+Scrapper = Scrapper()
 
 def exit_program():
     print("Exiting the program...")
@@ -50,6 +52,20 @@ def get():
         socketio.emit('announcement', res)
     return jsonify(res)
 
+@app.route("/fetch")
+def fetch():
+    res = request.args.get("param")
+    json_data = [
+        {
+            'id': i,
+            'title': item[0],
+            'price': item[1],
+            'link': item[2],
+            'source': item[3]
+        }
+        for i, item in enumerate(Scrapper(res))
+    ]
+    return jsonify(json_data)
 
 if __name__ == "__main__":
     app.run(debug=True)

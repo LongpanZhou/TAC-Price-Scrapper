@@ -1,0 +1,9 @@
+flask
+pandas
+requests
+bs4
+numpy
+beautifulsoup4
+flask-cors
+flask_socketio
+alive-progress
